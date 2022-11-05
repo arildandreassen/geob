@@ -4,7 +4,10 @@
  */
 exports.up = function (knex) {
   return knex.schema.createTable("countries", (table) => {
-    table.increments("id").primary(), table.string("country_name");
+    table.increments("id").unsigned().primary(),
+      table.string("country_name"),
+      table.timestamp("created_at"),
+      table.timestamp("updated_at");
   });
 };
 
