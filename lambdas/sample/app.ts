@@ -15,18 +15,15 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
       });
 
-    const country_name = faker.address.country()
-    await pg('countries').insert({country_name})
-
-      
-
+    const country_name = faker.address.country().toLowerCase()
 
     let response: APIGatewayProxyResult;
     try {
+        await pg('countries').insert({country_name, created_at: new Date(), updated_at: new Date()})
         response = {
             statusCode: 200,
             body: JSON.stringify({
-                message: 'hello world',
+                country_name
             }),
         };
     } catch (err: unknown) {

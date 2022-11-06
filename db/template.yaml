@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  
+  VPCRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+
+  VPCLocalRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref VPCRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+  
+  Subnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock: 10.0.0.0/17
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+
+  Subnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock: 10.0.128.0/17
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+  
+  #Database subnet group for the RDS instance 
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS Subnet Group
+      SubnetIds:
+      - !Ref Subnet01
+      - !Ref Subnet02
+  
+  VPCSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: VPC Access
+      GroupName: VPC Access
+      VpcId: !Ref VPC
+
+  LocalDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Local Access to DB
+      GroupName: DBAccess
+      VpcId: !Ref VPC
+
+  AWSSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref VPCSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref VPCSecurityGroup
+
+  LocalhostSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref LocalDBSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      CidrIp: 73.229.12.126/32
+
+  AWSSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref VPCSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref VPCSecurityGroup
+
+  LocalhostSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref LocalDBSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      CidrIp: 73.229.12.126/32
+
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DBSecret
+      Description: Secret for the RDS Instance
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "dbuser"}'
+        GenerateStringKey: password
+        PasswordLength: 64
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: sample1
+      AllocatedStorage: '20'
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      PubliclyAccessible: true
+      MasterUsername: MyName
+      MasterUserPassword: MyPassword
+      VPCSecurityGroups: 
+        - !Ref VPCSecurityGroup
+        - !Ref LocalDBSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
