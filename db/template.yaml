@@ -7,6 +7,7 @@ Resources:
       CidrBlock: 10.0.0.0/16
       EnableDnsHostnames: true
       EnableDnsSupport: true
+      InstanceTenancy: default
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -116,8 +117,20 @@ Resources:
       FromPort: -1
       ToPort: -1
       CidrIp: 73.229.12.126/32
+  
+  SubnetRouteTableAssociation01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPCRouteTable
+      SubnetId: !Ref Subnet01
+  
+  SubnetRouteTableAssociation01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPCRouteTable
+      SubnetId: !Ref Subnet02
 
-  DBSecret:
+  DBPassword:
     Type: AWS::SecretsManager::Secret
     Properties:
       Name: DBSecret
@@ -126,17 +139,19 @@ Resources:
         SecretStringTemplate: '{"username": "dbuser"}'
         GenerateStringKey: password
         PasswordLength: 64
+        ExcludePunctuation: true
+        ExcludeCharacters: '"@/\`'
 
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBInstanceIdentifier: sample1
+      DBInstanceIdentifier: sample
       AllocatedStorage: '20'
       DBInstanceClass: db.t3.micro
       Engine: postgres
       PubliclyAccessible: true
-      MasterUsername: MyName
-      MasterUserPassword: MyPassword
+      MasterUsername: dbuser
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DBPassword}::password}}'
       VPCSecurityGroups: 
         - !Ref VPCSecurityGroup
         - !Ref LocalDBSecurityGroup

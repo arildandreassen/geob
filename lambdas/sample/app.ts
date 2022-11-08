@@ -7,10 +7,10 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const pg = knex({
         client: 'pg',
         connection: {
-            host: 'host.docker.internal',
+            host: 'sample.cwsbx8vpfswc.us-west-1.rds.amazonaws.com',
             port: 5432,
-            user: 'postgres', 
-            password: 'password',
+            user: 'dbuser', 
+            password: 'IAK4vLKeQT0rlen5XZzXS4y02m4sdmcXWvz5htgV9UroxdGoqYfzyCa6SjndOoQg',
             database: 'postgres'
         }
       });

@@ -20,6 +20,12 @@ Resources:
       Runtime: nodejs16.x
       Architectures:
         - x86_64
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-0d7bb8669df3dcd3f
+        SubnetIds: 
+          - subnet-0726cc3649d43e651
+          - subnet-08112db608ffd990a 
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
