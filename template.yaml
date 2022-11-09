@@ -10,7 +10,17 @@ Globals:
   Function:
     Timeout: 3
 
+Parameters:
+  DatabaseConnectionString:
+    Type: String
+    Default: postgresql://postgres:password@host.docker.internal:5432/postgres
+
 Resources:
+  SampleApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+
   SampleFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -18,6 +28,9 @@ Resources:
       CodeUri: lambdas/sample/
       Handler: app.lambdaHandler
       Runtime: nodejs16.x
+      Environment: 
+        Variables:
+          databaseString: !Ref DatabaseConnectionString
       Architectures:
         - x86_64
       VpcConfig:
@@ -25,7 +38,14 @@ Resources:
           - sg-0d7bb8669df3dcd3f
         SubnetIds: 
           - subnet-0726cc3649d43e651
-          - subnet-08112db608ffd990a 
+          - subnet-08112db608ffd990a
+      Events:
+        ApiKey:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SampleApi
+            Path: /
+            Method: GET
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:

@@ -1,18 +1,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import {faker} from '@faker-js/faker'
 import {knex} from "knex";
+import { env } from 'process';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
     const pg = knex({
         client: 'pg',
-        connection: {
-            host: 'sample.cwsbx8vpfswc.us-west-1.rds.amazonaws.com',
-            port: 5432,
-            user: 'dbuser', 
-            password: 'IAK4vLKeQT0rlen5XZzXS4y02m4sdmcXWvz5htgV9UroxdGoqYfzyCa6SjndOoQg',
-            database: 'postgres'
-        }
+        connection: env.databaseString
       });
 
     const country_name = faker.address.country().toLowerCase()
