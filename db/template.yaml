@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  DeployName:
+    Type: String
+    Default: geob-dev # Change this value before a deploy to an environment
+    Description: Name of the deployed stack and properties
+  DBName:
+    Type: String
+    Default: geobdev
+    Description: Name of the database without hyphen
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: "Environment"
+          Value: !Ref DeployName
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  
+  VPCRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+
+  VPCLocalRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref VPCRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+  
+  Subnet01:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+
+  Subnet02:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock: 10.0.128.0/24
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+  
+  #Database subnet group for the RDS instance 
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: RDS Subnet Group
+      SubnetIds:
+      - !Ref Subnet01
+      - !Ref Subnet02
+  
+  VPCSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: DB Access From AWS
+      GroupName: DB Access From AWS
+      VpcId: !Ref VPC
+
+  LocalDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: DB Access From Local
+      GroupName: DB Access From Local
+      VpcId: !Ref VPC
+
+  AWSSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref VPCSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref VPCSecurityGroup
+
+  LocalhostSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref LocalDBSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      CidrIp: 73.229.12.126/32
+
+  AWSSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref VPCSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      SourceSecurityGroupId: !Ref VPCSecurityGroup
+
+  LocalhostSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    DependsOn: VPCSecurityGroup
+    Properties:
+      GroupId: !Ref LocalDBSecurityGroup
+      IpProtocol: -1
+      FromPort: -1
+      ToPort: -1
+      CidrIp: 73.229.12.126/32
+  
+  SubnetRouteTableAssociation01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPCRouteTable
+      SubnetId: !Ref Subnet01
+  
+  SubnetRouteTableAssociation02:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPCRouteTable
+      SubnetId: !Ref Subnet02
+
+  DBPassword:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Ref DeployName
+      Description: Secret for the RDS Instance
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "dbuser"}'
+        GenerateStringKey: password
+        PasswordLength: 64
+        ExcludePunctuation: true
+        ExcludeCharacters: '"@/\`'
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Ref DeployName
+      AllocatedStorage: '20'
+      DBName: !Ref DBName
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      EngineVersion: 14.4
+      PubliclyAccessible: true
+      MasterUsername: dbuser
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DBPassword}::password}}'
+      VPCSecurityGroups: 
+        - !Ref VPCSecurityGroup
+        - !Ref LocalDBSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
