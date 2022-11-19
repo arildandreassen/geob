@@ -5,7 +5,7 @@ module.exports = {
   local: {
     client: "postgresql",
     pool: { min: 1, max: 5 },
-    connection: process.env.DATABASE_URL,
+    connection: process.env.DATABASE_URL_LOCAL,
     migrations: {
       directory: path.join(__dirname, "db", "migrations"),
     },

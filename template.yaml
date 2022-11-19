@@ -1,9 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  sam-app
-
-  Sample SAM Template for sam-app
+  geob-backend
   
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -16,16 +14,20 @@ Parameters:
     Default: postgresql://postgres:password@host.docker.internal:5432/postgres
 
 Resources:
-  SampleApi:
+  GeobApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: dev
+      Cors: 
+        AllowMethods: "'POST, GET'"
+        AllowHeaders: "'content-type'"
+        AllowOrigin: "'*'"
 
-  SampleFunction:
+  GetCountryFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: Sample
-      CodeUri: lambdas/sample/
+      FunctionName: GetCountry
+      CodeUri: lambdas/getCountry/
       Handler: app.lambdaHandler
       Runtime: nodejs16.x
       Environment: 
@@ -35,15 +37,15 @@ Resources:
         - x86_64
       VpcConfig:
         SecurityGroupIds:
-          - sg-0d7bb8669df3dcd3f
+          - sg-052c8edab616490a8
         SubnetIds: 
-          - subnet-0726cc3649d43e651
-          - subnet-08112db608ffd990a
+          - subnet-0f21e46c03afd4044
+          - subnet-0b52a6714fd3fd247
       Events:
         ApiKey:
           Type: Api
           Properties:
-            RestApiId: !Ref SampleApi
+            RestApiId: !Ref GeobApi
             Path: /
             Method: GET
     Metadata: # Manage esbuild properties
@@ -64,10 +66,3 @@ Resources:
         - mysql
         - pg-native
 
-Outputs:
-  SampleFunction:
-    Description: "Sample Lambda Function ARN"
-    Value: !GetAtt SampleFunction.Arn
-  SampleFunctionIamRole:
-    Description: "Implicit IAM Role created for Sample function"
-    Value: !GetAtt SampleFunction.Arn

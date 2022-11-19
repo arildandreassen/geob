@@ -10,21 +10,35 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         connection: env.databaseString
       });
 
-    const country_name = faker.address.country().toLowerCase()
+      const numberOfCountriesInTheWorld = 192
+      const randomCountryIndex = Math.floor(Math.random() * numberOfCountriesInTheWorld)
+
 
     let response: APIGatewayProxyResult;
     try {
-        await pg('countries').insert({country_name, created_at: new Date(), updated_at: new Date()})
+        const countryName = await pg('countries').offset(randomCountryIndex).limit(1)
+        console.log(countryName)
+        
         response = {
             statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*", // Allow from anywhere 
+                "Access-Control-Allow-Methods": "GET" // Allow only GET request 
+            },
             body: JSON.stringify({
-                country_name
+                countryName
             }),
         };
     } catch (err: unknown) {
         console.log(err);
         response = {
             statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*", // Allow from anywhere 
+                "Access-Control-Allow-Methods": "GET" // Allow only GET request 
+            },
             body: JSON.stringify({
                 message: err instanceof Error ? err.message : 'some error happened',
             }),
