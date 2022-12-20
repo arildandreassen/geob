@@ -1,7 +1,8 @@
 exports.up = function (knex) {
   return knex.schema.createTable("countries", (table) => {
-    table.increments("id").unsigned().primary(),
-      table.string("country_name"),
+    table.string("id").unique().primary(),
+      table.string("name").unique(),
+      table.string("country_code", 2),
       table.timestamp("created_at"),
       table.timestamp("updated_at");
   });

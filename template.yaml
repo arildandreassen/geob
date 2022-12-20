@@ -7,6 +7,18 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+    Runtime: nodejs16.x
+    Environment: 
+      Variables:
+        databaseString: !Ref DatabaseConnectionString
+    Architectures:
+      - x86_64
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-052c8edab616490a8
+      SubnetIds: 
+        - subnet-0f21e46c03afd4044
+        - subnet-0b52a6714fd3fd247
 
 Parameters:
   DatabaseConnectionString:
@@ -23,30 +35,18 @@ Resources:
         AllowHeaders: "'content-type'"
         AllowOrigin: "'*'"
 
-  GetCountryFunction:
+  ListCountriesFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       FunctionName: GetCountry
-      CodeUri: lambdas/getCountry/
+      CodeUri: lambdas/listCountries/
       Handler: app.lambdaHandler
-      Runtime: nodejs16.x
-      Environment: 
-        Variables:
-          databaseString: !Ref DatabaseConnectionString
-      Architectures:
-        - x86_64
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-052c8edab616490a8
-        SubnetIds: 
-          - subnet-0f21e46c03afd4044
-          - subnet-0b52a6714fd3fd247
       Events:
-        ApiKey:
+        ListCountries:
           Type: Api
           Properties:
             RestApiId: !Ref GeobApi
-            Path: /
+            Path: /countries
             Method: GET
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
@@ -65,4 +65,36 @@ Resources:
         - tedious
         - mysql
         - pg-native
+
+  GetCountryFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: GetCountry
+      CodeUri: lambdas/getCountry/
+      Handler: app.lambdaHandler
+      Events:
+        GetCountry:
+          Type: Api
+          Properties:
+            RestApiId: !Ref GeobApi
+            Path: /countries/{countryId}
+            Method: GET
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints: 
+        - app.ts
+        External:
+        - better-sqlite3
+        - mysql2
+        - pg-query-stream
+        - oracledb
+        - sqlite3
+        - tedious
+        - mysql
+        - pg-native
+
 
