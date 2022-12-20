@@ -8,6 +8,7 @@
     "local.db.up": "sh ./db/local_db_up.sh && npx knex migrate:latest --env local && npx knex seed:run --env local",
     "local.db.down": "sh ./db/local_db_down.sh",
     "sam.build": "sam build",
+    "sam.local": "sam local start-api",
     "sam.deploy": "sam deploy --stack-name geob-backend --resolve-s3 backend.geob.com --no-fail-on-empty-changeset --capabilities CAPABILITY_NAMED_IAM"
   },
   "repository": {

@@ -3,18 +3,17 @@ import {knex} from "knex";
 import { env } from 'process';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const {pathParameters} = event
-    const {countryId} = pathParameters
+
     const pg = knex({
         client: 'pg',
         connection: env.databaseString
-      });
+    });
 
 
     let response: APIGatewayProxyResult;
     try {
-        const countries = await pg('countries').select('*').where({id:countryId})
-
+        const countries = await pg('countries').select('*')
+        
         response = {
             statusCode: 200,
             headers: {
@@ -22,7 +21,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                 "Access-Control-Allow-Origin": "*", // Allow from anywhere 
                 "Access-Control-Allow-Methods": "GET" // Allow only GET request 
             },
-            body: JSON.stringify(countries[0]),
+            body: JSON.stringify({
+                countries
+            }),
         };
     } catch (err: unknown) {
         console.log(err);
