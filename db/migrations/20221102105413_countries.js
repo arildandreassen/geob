@@ -3,8 +3,14 @@ exports.up = function (knex) {
     table.string("id").unique().primary(),
       table.string("name").unique(),
       table.string("country_code", 2),
-      table.timestamp("created_at"),
-      table.timestamp("updated_at");
+      table
+        .dateTime("created_at")
+        .notNullable()
+        .defaultTo(knex.raw("CURRENT_TIMESTAMP"));
+    table
+      .dateTime("updated_at")
+      .notNullable()
+      .defaultTo(knex.raw("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"));
   });
 };
 

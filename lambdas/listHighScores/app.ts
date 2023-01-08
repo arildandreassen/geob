@@ -12,7 +12,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
     let response: APIGatewayProxyResult;
     try {
-        const countries = await pg('countries').select('id', 'name', 'country_code')
+        const highscores = await pg('highscores').select('id', 'name', 'score').limit(20).orderBy('score', 'asc')
         
         response = {
             statusCode: 200,
@@ -22,7 +22,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                 "Access-Control-Allow-Methods": "GET" // Allow only GET request 
             },
             body: JSON.stringify({
-                countries
+                highscores
             }),
         };
     } catch (err: unknown) {
