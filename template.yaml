@@ -38,7 +38,7 @@ Resources:
   ListCountriesFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: GetCountry
+      FunctionName: ListCountries
       CodeUri: lambdas/listCountries/
       Handler: app.lambdaHandler
       Events:
@@ -79,6 +79,68 @@ Resources:
             RestApiId: !Ref GeobApi
             Path: /countries/{countryId}
             Method: GET
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints: 
+        - app.ts
+        External:
+        - better-sqlite3
+        - mysql2
+        - pg-query-stream
+        - oracledb
+        - sqlite3
+        - tedious
+        - mysql
+        - pg-native
+
+  ListHighScoresFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: ListHighScores
+      CodeUri: lambdas/listHighScores/
+      Handler: app.lambdaHandler
+      Events:
+        ListHighScores:
+          Type: Api
+          Properties:
+            RestApiId: !Ref GeobApi
+            Path: /highscores
+            Method: GET
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints: 
+        - app.ts
+        External:
+        - better-sqlite3
+        - mysql2
+        - pg-query-stream
+        - oracledb
+        - sqlite3
+        - tedious
+        - mysql
+        - pg-native
+
+  AddHighScoreFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: AddHighScore
+      CodeUri: lambdas/addHighScores/
+      Handler: app.lambdaHandler
+      Events:
+        AddHighScore:
+          Type: Api
+          Properties:
+            RestApiId: !Ref GeobApi
+            Path: /highscores
+            Method: POST
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
